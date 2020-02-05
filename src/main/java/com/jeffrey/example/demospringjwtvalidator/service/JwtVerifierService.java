@@ -2,6 +2,8 @@ package com.jeffrey.example.demospringjwtvalidator.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
@@ -18,16 +20,16 @@ import java.util.Map;
 public class JwtVerifierService {
     private static final Logger LOGGER = LoggerFactory.getLogger(JwtVerifierService.class);
 
-    private static final String PUBLIC_KEY_URI =
-            "http://localhost:8080/jwk";
-//            "https://manulife-development-dev.apigee.net/edgemicro-auth/jwkPublicKeys";
-//            "https://dcsg-hub-dev.okta.com/oauth2/v1/keys";
+    private static final String LOCAL_PUBLIC_KEY_URI = "http://localhost:8080/jwk";
 
     private static final String ISSUER_URI =
             "https://manulife-development-dev.apigee.net/v1/mg/oauth2/token";
 
+    @Autowired
+    @Qualifier("jwtDecoder")
+    JwtDecoder jwtDecoder;
+
     public boolean verify(String tokenString) {
-        JwtDecoder jwtDecoder = jwtDecoder();
         try {
             /**
              * standard validation of the JWT
@@ -69,7 +71,7 @@ public class JwtVerifierService {
 //        return converter;
 //    }
 
-    @Bean
+    @Bean("jwtDecoder")
     public JwtDecoder jwtDecoder() {
 //        return NimbusJwtDecoder
 //                .withJwkSetUri(PUBLIC_KEY_URI)
@@ -77,7 +79,7 @@ public class JwtVerifierService {
 //                .build();
 
         NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder
-                .withJwkSetUri(PUBLIC_KEY_URI)
+                .withJwkSetUri(LOCAL_PUBLIC_KEY_URI)
                 .jwsAlgorithm(SignatureAlgorithm.RS256)
                 .build();
 
