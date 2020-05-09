@@ -1,0 +1,8 @@
+
+com:
+  jeffrey:
+    example:
+      jwtValidation:
+        remote-jwk-set-uri: https://manulife-development-dev.apigee.net/edgemicro-auth/jwkPublicKeys
+        local-jwk-set-uri: http://localhost:8080/jwk
+        token-issuer-uri: https://manulife-development-dev.apigee.net/v1/mg/oauth2/token

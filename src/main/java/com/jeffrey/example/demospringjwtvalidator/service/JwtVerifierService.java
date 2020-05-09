@@ -1,9 +1,11 @@
 package com.jeffrey.example.demospringjwtvalidator.service;
 
+import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
@@ -20,14 +22,17 @@ import java.util.Map;
 public class JwtVerifierService {
     private static final Logger LOGGER = LoggerFactory.getLogger(JwtVerifierService.class);
 
-    private static final String LOCAL_PUBLIC_KEY_URI = "http://localhost:8080/jwk";
+    @SuppressWarnings("unused")
+    @Value("${com.jeffrey.example.jwtValidation.local-jwk-set-uri:#{null}}")
+    private String localPublicKeyUri;
 
-    private static final String ISSUER_URI =
-            "https://manulife-development-dev.apigee.net/v1/mg/oauth2/token";
+    @SuppressWarnings("unused")
+    @Value("${com.jeffrey.example.jwtValidation.token-issuer-uri:#{null}}")
+    private String tokenIssuerUri;
 
     @Autowired
     @Qualifier("jwtDecoder")
-    JwtDecoder jwtDecoder;
+    private JwtDecoder jwtDecoder;
 
     public boolean verify(String tokenString) {
         try {
@@ -78,15 +83,18 @@ public class JwtVerifierService {
 //                .jwsAlgorithm(SignatureAlgorithm.RS256)
 //                .build();
 
+        Assert.assertNotNull(localPublicKeyUri);
+        Assert.assertNotNull(tokenIssuerUri);
+
         NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder
-                .withJwkSetUri(LOCAL_PUBLIC_KEY_URI)
+                .withJwkSetUri(localPublicKeyUri)
                 .jwsAlgorithm(SignatureAlgorithm.RS256)
                 .build();
 
         // custom clock skew to mitigate clock drift problem
         OAuth2TokenValidator<Jwt> withClockSkew = new DelegatingOAuth2TokenValidator<>(
                 new JwtTimestampValidator(Duration.ofDays(10)), //TODO: should be configurable
-                new JwtIssuerValidator(ISSUER_URI));
+                new JwtIssuerValidator(tokenIssuerUri));
         jwtDecoder.setJwtValidator(withClockSkew);
 
         return jwtDecoder;

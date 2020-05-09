@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,7 +22,9 @@ import java.util.Objects;
 public class DemoController {
     private static final Logger LOGGER = LoggerFactory.getLogger(DemoController.class);
 
-    private static final String REMOTE_PUBLIC_KEY_URI = "https://manulife-development-dev.apigee.net/edgemicro-auth/jwkPublicKeys";
+    @SuppressWarnings("unused")
+    @Value("${com.jeffrey.example.jwtValidation.remote-jwk-set-uri:#{null}}")
+    private String remotePublicKeyUri;
 
     /**
      * curl -i http://localhost:8080/test1 -X GET -H 'Content-Type: application/json' -H "Authorization: Bearer eyJraWQiOiIxIiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYifQ.eyJhY2Nlc3NfdG9rZW4iOiJTS3F0NHlHUlQ0d0FCeENSQkJtd2tKQXRneDlEIiwiYXVkaWVuY2UiOiJtaWNyb2dhdGV3YXkiLCJhcGlfcHJvZHVjdF9saXN0IjpbImF0by1kZW1vLWFwaS1kZXYtaW50LXByb2R1Y3QiXSwiYXBwbGljYXRpb25fbmFtZSI6ImF0by1kZW1vLWFwaS1kZXYtaW50LWFwcCIsIm5iZiI6MTU4MDUzMzcyMywiaXNzIjoiaHR0cHM6XC9cL21hbnVsaWZlLWRldmVsb3BtZW50LWRldi5hcGlnZWUubmV0XC92MVwvbWdcL29hdXRoMlwvdG9rZW4iLCJzY29wZXMiOlsiUkVBRCIsIkRFTEVURSIsIldSSVRFIl0sImV4cCI6MTU4MDUzNDA4MywiaWF0IjoxNTgwNTMzNzgzLCJjbGllbnRfaWQiOiIwRzhRVzdFTHBCVmhxYzlabnF3WUZ3WHJhSzVTV2FqYSIsImp0aSI6ImQ4OThiZjQ4LWE4MGEtNGNmNC1hYTQ1LWNlYmYyMzIyZGRmOCJ9.YLj5KYS3fXlitMKUOvEsjtbObtKXwIlakdBQkVqwpdN4_P-1P7KzTITkU7A2UnuTJYm5Y26ImekgEuPuYuYYBzLYz8Ea6As8kwNckXZxCadbULoaOUri8r6wvctjxvtxkKtKI0ZBpxC1KmUvwjKcgulo0vQrZyhaYB_x4a8uHAiHZgtu1TvZvEZqjfP-7mZRnWBhNGi0cpHw7k6vpe7lx2aB_CF9tMp-tgUE6G4m2kmHHiznFXGIqJ9sx-wnTBVFlYFE-QigTtgvKngSCZ8SY1pHpXKapjivq0oNCldiBKeUJecA4UuCYb_g4NKQcHVznnCiWIX9T-be0M0nSfx5ng"
@@ -47,7 +50,7 @@ public class DemoController {
     RestTemplate restTemplate;
 
     public String fetchRemoteJwk() throws Exception {
-        String jsonString = restTemplate.getForObject(URI.create(REMOTE_PUBLIC_KEY_URI), String.class);
+        String jsonString = restTemplate.getForObject(URI.create(remotePublicKeyUri), String.class);
 
         // workaround: remove any null object from the keyset
         JSONObject jsonObject = JSONObjectUtils.parse(jsonString);

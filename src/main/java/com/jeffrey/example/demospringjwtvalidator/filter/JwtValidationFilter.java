@@ -14,11 +14,18 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @Component("JwtValidationFilter")
-public class JwtValidationFilter extends OncePerRequestFilter {
+public final class JwtValidationFilter extends OncePerRequestFilter {
 
-    @Autowired
-    @Qualifier("JwtVerifierService")
     private JwtVerifierService jwtVerifierService;
+
+    public JwtValidationFilter(
+        @Autowired
+        @Qualifier("JwtVerifierService")
+        JwtVerifierService jwtVerifierService
+    ) {
+        super();
+        this.jwtVerifierService = jwtVerifierService;
+    }
 
     @Override
     protected void doFilterInternal(
@@ -32,7 +39,7 @@ public class JwtValidationFilter extends OncePerRequestFilter {
         } else {
             final String authorizationHeaderString = httpServletRequest.getHeader("Authorization");
             if (StringUtils.isEmpty(authorizationHeaderString) || authorizationHeaderString.indexOf("Bearer ")!=0) {
-                httpServletResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "NOT AUTHORIZED");
+                httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "NOT AUTHORIZED");
             } else {
                 // validate access token
                 String tokenString = authorizationHeaderString.substring("Bearer ".length());
@@ -40,7 +47,7 @@ public class JwtValidationFilter extends OncePerRequestFilter {
                 if (result) {
                     filterChain.doFilter(httpServletRequest, httpServletResponse);
                 } else {
-                    httpServletResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "NOT AUTHORIZED");
+                    httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "NOT AUTHORIZED");
                 }
             }
         }
