@@ -7,12 +7,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Service;
 
+import javax.validation.constraints.Null;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
@@ -34,7 +36,7 @@ public class JwtVerifierService {
     @Qualifier("jwtDecoder")
     private JwtDecoder jwtDecoder;
 
-    public boolean verify(String tokenString) {
+    public HttpStatus verify(String tokenString) {
         try {
             /**
              * standard validation of the JWT
@@ -47,6 +49,7 @@ public class JwtVerifierService {
             LOGGER.debug("jwt: {}", jwt.toString());
 
             /**
+             * TODO:
              * validate that the JWT is intended for your API by checking the aud claim of the JWT.
              */
             List<String> audienceList = jwt.getAudience();
@@ -55,15 +58,16 @@ public class JwtVerifierService {
             /**
              * even the JWT is valid, verify the scopes to further restrict access to protected API
              */
-            Collection<String> scopes = (Collection<String>) claims.get("scopes");
-            if (scopes.contains("READ") && scopes.contains("WRITE") && scopes.contains("DELETE")) {
-                return true;
+            Collection<String> scopes = (Collection<String>) claims.get("scope");
+            if (scopes == null) return HttpStatus.FORBIDDEN;
+            if (scopes.contains("message:read") || scopes.contains("message:write")) {
+                return HttpStatus.OK;
             }
-            return false;
+            return HttpStatus.UNAUTHORIZED;
 
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
-            return false;
+            return HttpStatus.UNAUTHORIZED;
         }
     }
 
@@ -84,7 +88,6 @@ public class JwtVerifierService {
 //                .build();
 
         Assert.assertNotNull(localPublicKeyUri);
-        Assert.assertNotNull(tokenIssuerUri);
 
         NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder
                 .withJwkSetUri(localPublicKeyUri)
@@ -92,9 +95,15 @@ public class JwtVerifierService {
                 .build();
 
         // custom clock skew to mitigate clock drift problem
-        OAuth2TokenValidator<Jwt> withClockSkew = new DelegatingOAuth2TokenValidator<>(
-                new JwtTimestampValidator(Duration.ofDays(10)), //TODO: should be configurable
-                new JwtIssuerValidator(tokenIssuerUri));
+        OAuth2TokenValidator<Jwt> withClockSkew;
+        if (tokenIssuerUri != null) {
+            withClockSkew = new DelegatingOAuth2TokenValidator<>(
+                    new JwtTimestampValidator(Duration.ofDays(10)), //TODO: should be configurable
+                    new JwtIssuerValidator(tokenIssuerUri));
+        } else {
+            withClockSkew = new DelegatingOAuth2TokenValidator<>(
+                    new JwtTimestampValidator(Duration.ofDays(10))); //TODO: should be configurable
+        }
         jwtDecoder.setJwtValidator(withClockSkew);
 
         return jwtDecoder;

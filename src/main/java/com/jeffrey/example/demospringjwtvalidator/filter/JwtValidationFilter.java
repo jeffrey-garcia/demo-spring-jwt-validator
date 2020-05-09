@@ -3,6 +3,7 @@ package com.jeffrey.example.demospringjwtvalidator.filter;
 import com.jeffrey.example.demospringjwtvalidator.service.JwtVerifierService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -43,11 +44,11 @@ public final class JwtValidationFilter extends OncePerRequestFilter {
             } else {
                 // validate access token
                 String tokenString = authorizationHeaderString.substring("Bearer ".length());
-                boolean result = jwtVerifierService.verify(tokenString);
-                if (result) {
+                HttpStatus status = jwtVerifierService.verify(tokenString);
+                if (status.value() == HttpStatus.OK.value()) {
                     filterChain.doFilter(httpServletRequest, httpServletResponse);
                 } else {
-                    httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "NOT AUTHORIZED");
+                    httpServletResponse.sendError(status.value(), status.name());
                 }
             }
         }
